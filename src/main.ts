@@ -1,5 +1,6 @@
 import client from './client'
 import commands from './commands'
+import { releaseClaim } from './controllers/claims'
 
 export default () => {
   const pkg = require('../package.json')
@@ -34,17 +35,19 @@ export default () => {
   })
 
   client.on('voiceStateUpdate', async (oldState, newState) => {
-    const { channel } = oldState
+    const { channel, guild } = oldState
 
-    if (!channel || !channel.name.startsWith('[ECB]')) {
+    if (!channel || !channel.name.startsWith('[ECB]') || !guild) {
       return false
     }
 
+    const system = channel.name.slice(6)
     if (channel.members.size === 0) {
       try {
-        await channel.delete(`Claim and channel '${channel.name}' released due to empty voice channel`)
+        await releaseClaim(guild.id, system)
+        await channel.delete(`Claim and channel for system '${system}' released due to empty voice channel`)
       } catch (e) {
-        console.error('Unable to delete channel: ', channel.name)
+        console.error(`Unable to release claim and delete channel for system '${system}'`, channel.name)
       }
     }
 

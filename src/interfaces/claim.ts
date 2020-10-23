@@ -8,11 +8,6 @@ export enum CLAIM_STATUS {
   ARCHIVED = "ARCHIVED"
 }
 
-export interface IClaimChannel {
-  id: string
-  name: string
-}
-
 export interface IClaim {
   createdAt: admin.firestore.Timestamp
   createdBy: IMember
@@ -21,6 +16,6 @@ export interface IClaim {
   party: IMember[]
   status: CLAIM_STATUS
   system: string
-  updatedAt: admin.firestore.Timestamp,
-  voiceChannel: IClaimChannel
+  unclaimedBy: IMember | null
+  updatedAt: admin.firestore.Timestamp
 }

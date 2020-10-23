@@ -1,38 +1,10 @@
 import { Message } from 'discord.js'
 
-import { db, serverTimestamp } from '../db'
+import { createClaim, findClaim } from '../controllers/claims'
+import { serverTimestamp } from '../db'
 import { findParentCategory } from '../helpers'
-import { CLAIM_STATUS, IClaim } from '../interfaces/claim'
+import { CLAIM_STATUS } from '../interfaces/claim'
 import { IMember } from '../interfaces/member'
-
-const createClaim = async (claimToCreate: IClaim): Promise<string | null> => {
-  try {
-    return await db
-      .collection('claims')
-      .add(claimToCreate)
-      .then((snap) => snap.id)
-  } catch (e) {
-    console.error(e)
-    throw e
-  }
-}
-
-const findClaim = async (guildId: string, system: string): Promise<IClaim | null> => {
-  try {
-    return await db
-      .collection('claims')
-      .where('guild.id', '==', guildId)
-      .where('status', '==', CLAIM_STATUS.ACTIVE)
-      .where('system', '==', system)
-      .limit(1)
-      .get()
-      .then((snap) =>
-        (snap.empty) ? null : { ...snap.docs[0].data(), id: snap.docs[0].id } as IClaim)
-  } catch (e) {
-    console.error(e)
-    throw e
-  }
-}
 
 export const claim = async (message: Message, args?: string[]): Promise<any> => {
   if (!args || args.length === 0) {
@@ -67,11 +39,7 @@ export const claim = async (message: Message, args?: string[]): Promise<any> => 
       id: member.id,
       nickname: member.displayName
     }
-    const voiceName = `[ECB] ${system}`
-    const voiceChannel = await guild.channels.create(voiceName, {
-      parent: category,
-      type: 'voice'
-    })
+
     await createClaim({
       createdAt: (serverTimestamp() as any),
       createdBy,
@@ -82,8 +50,14 @@ export const claim = async (message: Message, args?: string[]): Promise<any> => 
       party: [createdBy],
       status: CLAIM_STATUS.ACTIVE,
       system: system,
-      updatedAt: (serverTimestamp() as any),
-      voiceChannel: { id: voiceChannel.id, name: voiceName }
+      unclaimedBy: null,
+      updatedAt: (serverTimestamp() as any)
+    })
+
+    // Create the voice channel for this claim
+    await guild.channels.create(`[ECB] ${system}`, {
+      parent: category,
+      type: 'voice'
     })
   } catch (e) {
     await message.reply('Uh oh! There was an error creating your claim')
