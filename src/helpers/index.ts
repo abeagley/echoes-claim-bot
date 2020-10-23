@@ -1,0 +1,1 @@
+export { findParentCategory } from './channels'
